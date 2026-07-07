@@ -1,5 +1,7 @@
 package com.example.showcase.catalog;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -29,6 +31,10 @@ public final class BookDtos {
         }
     }
 
-    public record CreateBookRequest(String title, String author, @Nullable String isbn, BigDecimal price) {
+    public record CreateBookRequest(
+            @NotBlank String title,
+            @NotBlank String author,
+            @Nullable String isbn,
+            @Positive BigDecimal price) {
     }
 }

@@ -1,11 +1,12 @@
 # spring7-showcase
 
-Minimal Spring Boot 4.1 / Spring Framework 7.0.8 sample, Java 25, Gradle (Kotlin DSL).
-Not a template for a real service - each piece exists to demonstrate one specific
-new feature in isolation.
+Minimal Spring Boot 4.1 / Spring Framework 7.0.8 sample, Java 26 (with preview
+features enabled), Gradle (Kotlin DSL). Not a template for a real service - each
+piece exists to demonstrate one specific new feature in isolation.
 
 This repository has been build-verified locally in this workspace with Gradle `9.6.1`
-and Java `25.0.3`.
+and Java `26.0.1`. Running the built jar directly (rather than via `gradle bootRun`)
+requires the `--enable-preview` JVM flag or `BookSpotlightService` fails to load.
 
 ## What's in here
 
@@ -14,7 +15,7 @@ and Java `25.0.3`.
 | JPA 3.2 / Hibernate 7 entity | `catalog/Book.java` | Standard entity; Hibernate ORM 7.1/7.2 is now the JPA provider under Framework 7, native Hibernate support moved to `org.springframework.orm.jpa.hibernate` |
 | JSpecify null safety | `package-info.java` in each package, `@Nullable` on `Book.isbn` | `@NullMarked` is per-package, not inherited by sub-packages - each package needs its own `package-info.java` |
 | API Versioning (path-segment) | `config/WebConfig.java`, `catalog/BookController.java` | `GET /api/v1/books` vs `GET /api/v2/books`, same controller, different `@GetMapping(version=...)` methods, different response DTOs |
-| HTTP Interface Client | `client/CatalogLookupClient.java`, `config/HttpServiceClientConfig.java` | `@ImportHttpServices` + `@GetExchange` - no manual `HttpServiceProxyFactory` wiring. Points at `jsonplaceholder.typicode.com` as a stand-in external service |
+| HTTP Interface Client | `client/CatalogLookupClient.java`, `config/HttpServiceClientConfig.java` | `@ImportHttpServices` + `@GetExchange` - no manual `HttpServiceProxyFactory` wiring. Defaults to an in-app stub (`client/CatalogStubController.java`) so the demo runs without internet access; swap `catalog.lookup.base-url` to point at a real upstream service |
 | Core resilience: `@Retryable` | `order/OrderService.java` | Note: the attribute is `maxRetries`, not `maxAttempts` (that's the old Spring Retry project's annotation) - `maxRetries = 4` means up to 5 total invocations |
 | Core resilience: `@ConcurrencyLimit` | `order/OrderService.java` | Caps concurrent callers into the method; matters more with virtual threads since there's no implicit thread-pool ceiling |
 | `@EnableResilientMethods` | `ShowcaseApplication.java` | Required to activate both annotations above |

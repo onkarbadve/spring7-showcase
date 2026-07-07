@@ -10,7 +10,8 @@ are required for the requested task.
 
 - Spring Boot 4.1.0
 - Spring Framework 7 sample code
-- Java 25 toolchain
+- Java 26 toolchain (preview features enabled - see `spotlight` package's use
+  of structured concurrency)
 - Gradle with Kotlin DSL
 - JPA / Hibernate with H2
 
