@@ -10,11 +10,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.stream.Gatherers;
 
 /**
  * Demonstrates Spring Framework 7's native API versioning support
@@ -60,6 +62,19 @@ public class BookController {
     public BookSummaryV2 create(@Valid @RequestBody CreateBookRequest request) {
         Book book = new Book(request.title(), request.author(), request.isbn(), request.price());
         return BookSummaryV2.from(repository.save(book));
+    }
+
+    /**
+     * Demonstrates Java 24's Stream Gatherers (JEP 485): {@code Gatherers.windowFixed} chunks
+     * the catalog into fixed-size sublists in one intermediate stream operation - no manual
+     * index bookkeeping or a separate collector needed.
+     */
+    @GetMapping("/batches")
+    public List<List<BookSummaryV2>> batches(@RequestParam(defaultValue = "2") int size) {
+        return repository.findAll().stream()
+                .map(BookSummaryV2::from)
+                .gather(Gatherers.windowFixed(size))
+                .toList();
     }
 
     private Book findOrThrow(Long id) {

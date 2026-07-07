@@ -4,6 +4,7 @@ import com.example.showcase.catalog.Book;
 import com.example.showcase.catalog.BookDtos.BookSummaryV2;
 import com.example.showcase.catalog.BookRepository;
 import com.example.showcase.order.OrderService;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -38,7 +39,7 @@ public class BookSpotlightService {
 
     private BookSpotlightResponse assembleSpotlight(long bookId) {
         try (var scope = StructuredTaskScope.<Object, Void>open(
-                StructuredTaskScope.Joiner.awaitAllSuccessfulOrThrow(),
+                new SpotlightJoiner(),
                 config -> config
                         .withName("book-spotlight")
                         .withTimeout(Duration.ofSeconds(3))
@@ -97,5 +98,45 @@ public class BookSpotlightService {
         }
         return new ResponseStatusException(HttpStatus.BAD_GATEWAY,
                 "Failed to assemble spotlight for book " + bookId, ex);
+    }
+
+    /**
+     * Reimplements {@code Joiner.awaitAllSuccessfulOrThrow()}'s "cancel on first failure, throw
+     * it from result()" behavior (that built-in joiner is package-private and final, so it
+     * can't be extended), adding Java 26's {@code onTimeout()} hook (JEP 525). Without this
+     * override, a timeout throws the unchecked {@link StructuredTaskScope.TimeoutException},
+     * which isn't a {@link ResponseStatusException} and falls through {@link #adaptFailure} as
+     * a generic 502; overriding it lets a timeout be reported as an accurate 504 instead.
+     */
+    private static final class SpotlightJoiner implements StructuredTaskScope.Joiner<Object, Void> {
+
+        private volatile @Nullable Throwable firstException;
+        private volatile boolean timedOut;
+
+        @Override
+        public boolean onComplete(StructuredTaskScope.Subtask<Object> subtask) {
+            if (subtask.state() == StructuredTaskScope.Subtask.State.FAILED && firstException == null) {
+                firstException = subtask.exception();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void onTimeout() {
+            timedOut = true;
+        }
+
+        @Override
+        public Void result() throws Throwable {
+            if (timedOut) {
+                throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT,
+                        "Book spotlight assembly timed out before local and external lookups both completed");
+            }
+            if (firstException != null) {
+                throw firstException;
+            }
+            return null;
+        }
     }
 }
