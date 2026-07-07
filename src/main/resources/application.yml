@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: spring7-showcase
+  datasource:
+    url: jdbc:h2:mem:showcase;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    org.springframework.resilience: DEBUG
