@@ -22,6 +22,12 @@ repositories {
     mavenCentral()
 }
 
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.modulith:spring-modulith-bom:2.1.0")
+    }
+}
+
 dependencies {
     // Web (includes RestClient, MVC, Jackson 3)
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -38,6 +44,10 @@ dependencies {
     // JSpecify annotations for @NullMarked / @Nullable compile-time null safety
     implementation("org.jspecify:jspecify:1.0.0")
 
+    // Spring Modulith - @ApplicationModule annotation for the feature packages below;
+    // structure verification itself runs from spring-modulith-starter-test (ModularityTests).
+    implementation("org.springframework.modulith:spring-modulith-api")
+
     // In-memory DB for the sample - swap for Postgres/MySQL driver in real use
     runtimeOnly("com.h2database:h2")
 
@@ -46,6 +56,7 @@ dependencies {
     runtimeOnly("org.springframework.boot:spring-boot-h2console")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.modulith:spring-modulith-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

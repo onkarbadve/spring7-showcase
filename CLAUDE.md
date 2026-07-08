@@ -19,6 +19,9 @@ focus, and avoid broad refactors unless required for the requested task.
 - Gradle with Kotlin DSL (`build.gradle.kts`) - **no Gradle wrapper is committed**,
   so a local Gradle install (this workspace uses `9.6.1`) is required
 - Spring Data JPA / Hibernate ORM 7 with H2 (in-memory)
+- Spring Modulith 2.1.0 - verifies the package-per-feature layout described below is
+  a valid application module structure (no cycles, no reaching into another
+  module's internals); see `ModularityTests` under Architecture
 
 ## Build, Test, Run
 
@@ -59,7 +62,26 @@ that each demonstrate one capability:
 Application configuration is in `src/main/resources/application.yml`; tests live in
 `src/test/java/com/example/showcase`, mirroring the main package layout.
 
+Each of the six packages above is also a Spring Modulith application module -
+`ModularityTests` (`src/test/java/com/example/showcase/ModularityTests.java`) asserts
+the module structure is valid (`ApplicationModules.verify()`) and regenerates the
+PlantUML/C4 module diagrams under `build/spring-modulith-docs` (`Documenter`).
+
 Cross-cutting notes:
+
+- **Spring Modulith module boundaries are inferred from the package structure
+  alone** - `catalog`, `client`, `config`, `order`, `runtime`, and `spotlight` are
+  each a module because they're direct sub-packages of `com.example.showcase`
+  (the `@SpringBootApplication` package). The `@ApplicationModule(displayName = ...)`
+  annotation on each package's `package-info.java` is metadata only (used for the
+  generated docs); it doesn't change what's a module. The dependency graph is a
+  DAG - `spotlight` depends on `catalog` and `order`, `order` and `config` depend
+  on `client`, `config` also depends on `catalog` (`WebConfig`'s
+  `HandlerTypePredicate`) - so no `allowed-dependencies` restrictions or named
+  interfaces were needed to make `verify()` pass. Only `spring-modulith-api`
+  (main) and `spring-modulith-starter-test` (test) are used - no event
+  publication registry / `spring-modulith-starter-core` - since nothing here
+  publishes domain events across modules yet.
 
 - **API versioning is applied to every request, not just `BookController`.**
   `WebConfig` (`WebMvcConfigurer.configureApiVersioning`) wires a single,
